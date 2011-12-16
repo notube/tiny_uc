@@ -33,7 +33,7 @@ function init(){
   var pr = tmp_name();
   buttons = new ButtonsLink({"server":"jabber.notu.be"});
   me = new TV(pr,pr);
-  buttons.connect(me,"default_muc11",function(){});
+  buttons.connect(me,"default_muc",function(){});//might want to change the room
 
 }
 

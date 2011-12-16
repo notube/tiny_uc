@@ -560,14 +560,14 @@ presentable-from=\"#{start}\" presentable-until=\"#{en}\">
   def self.connect
        @@client.connect
        @accept_subscriptions = true
-       password = "gargonza"
+       password = "sekret"
        @@client.auth(password)
        @@client.send(Presence.new.set_type(:available))
        puts "about to create MUC"
        $muc = MUC::SimpleMUCClient.new(@@client)
        self.start_join_callback
-       room_name = "default_muc11"
-       server = "jabber.notu.be"
+       room_name = "default_muc"# may want to change room name
+       server = "jabber.example.com"
        $muc.join(Jabber::JID.new("#{room_name}@conference.#{server}/#{@@zid}"))
        $muc.say("{\"name\":\"#{@@zid}\",\"obj_type\":\"tv\",\"id\":\"#{@@zid}\",\"nowp\":null,\"suggestions\":[],\"shared\":[],\"history\":[]}")
 
@@ -582,7 +582,7 @@ presentable-from=\"#{start}\" presentable-until=\"#{en}\">
 
 
   def self.dostuff
-        server = "jabber.notu.be"
+        server = "jabber.example.com"
         jid = "#{@@zid}@#{server}" #@@fixme for your server
         @@client = Client.new(jid)
         Jabber::debug = false
