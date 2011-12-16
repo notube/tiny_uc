@@ -1,0 +1,66 @@
+<html>
+ <head>
+  <title>UC Player</title>
+
+  <script type="text/javascript" src="lib/jquery-1.4.4.min.js"></script>
+
+  <script type="text/javascript" src="lib/strophe.js"></script>
+  <script type="text/javascript" src="lib/buttons.js"></script><!-- depends on jquery -->
+
+  <link type="text/css" rel="stylesheet" href="css/player.css" />
+
+
+<script type="text/javascript">
+
+var buttons = null;
+var emp = null;
+var me = null;
+var lastmsg;
+var playvideo = false;
+
+function show_message(msg){
+  if(msg!=lastmsg){
+    $("#overlay").html(msg);
+    $("#overlay").fadeIn().delay(5000).fadeOut('slow');
+    lastmsg = msg;
+  }
+}
+
+function init(){
+
+  show_message("Welcome to Simple TV");
+
+  var pr = tmp_name();
+  buttons = new ButtonsLink({"server":"jabber.notu.be"});
+  me = new TV(pr,pr);
+  buttons.connect(me,"default_muc11",function(){});
+
+}
+
+function tmp_name(){
+  var rand = Math.floor(Math.random()*9999)
+  return "telly_"+String(rand);
+}
+
+
+$(document).bind('tv_changed', function (e,item) {
+
+  var programme = item.nowp;
+  me.nowp = item.nowp;
+  show_message("Playing "+programme["title"]);
+
+});
+
+
+</script>
+
+</head>
+
+<body onload="javascript:init()">
+    <div id="overlay"  style="display:none;" class="overlay">
+    </div>
+</body>
+</html>
+
+
+

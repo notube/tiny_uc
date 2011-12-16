@@ -1,0 +1,5 @@
+<response resource="uc/outputs">
+  <outputs>
+    <output name="Main Screen" oid="0" main="true" />
+  </outputs>
+</response>

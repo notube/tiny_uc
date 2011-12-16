@@ -1,0 +1,5 @@
+<response resource="uc/source-lists">
+  <source-lists>
+    <list list-id="uc_default" name="Default"/>
+  </source-lists>
+</response>

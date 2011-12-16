@@ -1,0 +1,15 @@
+This is a first attempt at an html / js / ruby tiny UC implementation. It's buggy, crufty and 
+incomplete. It doesn't play video. The zerconf part only works if you incorprate it into a phonegap 
+app. It depends on XMPP for 'tv'-server communication. You need access to an XMPP server that does 
+MUC.
+
+To get it working:
+
+* sudo gem install xmpp4r dnssd
+* cd server
+* open server.rb and add credential information (jabber server, username, password, muc room id)
+* ruby server.rb
+* open basicclient.html in a browser
+* edit tinyplayer for the muc room id you used for the server
+* open tinyplayer.html in a browser
+* click on stuff

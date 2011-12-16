@@ -1,0 +1,46 @@
+body{
+  background:black;
+  color: white;
+  font-family:Arial, Helvetica, sans-serif;
+}
+
+.overlay{
+  position:absolute;
+  top:10%;
+  left:15%;
+  width:70%;
+  opacity: 0.8;
+  background:black;
+  color: white;  
+  font-size:100px;
+  z-index:10;
+}
+
+.indent{
+  margin-left:50px;
+  font-size:smaller;
+}
+
+#message{
+  font-size: 30px;
+}
+
+#player_link{
+ float:right;
+ width:200px
+}
+
+a{
+ color:white;
+ margin-top:5px;
+ font-size: 16px;
+}
+
+a:link{
+  text-decoration:none;
+}
+
+a:hover{
+  color:#3198C4;
+}
+

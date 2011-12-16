@@ -1,0 +1,315 @@
+<html>
+<head>
+
+ <link type="text/css" rel="stylesheet" href="css/player.css" />
+
+ <script type="text/javascript" src="lib/jquery-1.4.4.min.js"></script>
+
+<!--        
+ <script type="text/javascript" charset="utf-8" src="lib/phonegap-1.2.0.js"></script>
+ <script type="text/javascript" src="lib/bonjour.js"></script>
+-->
+
+ <script type = "text/javascript">
+
+/* 
+
+A basic html UC client with a lot missing. The idea is that this can be used as part of a phonegap 
+ios app as well - hence the 'browser_only' flag - with phonegap it doesn't to be possible to test for 
+device as such, just wait for event that may never fire. hence explicit flag. The advantage of the 
+app is that it can do the zeroconf stuff which a browser can't do.
+
+*/
+
+
+var  services = {};
+
+var chosen_jsonrpc_url = null;
+var browser_only = true;
+
+function test_for_device(){
+  console.log("testing for device");
+
+  if(browser_only){
+    ask_for_ip();
+  }else{
+    $("#message").html("<h3>Please wait a moment while we scan for devices.</h3>");
+    document.addEventListener("deviceready",onDeviceReady,false);
+  }
+
+}
+
+/* Bonjour stuff */
+
+//lanch bonjour scanner
+
+function scan(){
+  services = {};
+  services_list=[];
+  $("#message").html("<h3>Please wait a moment while we scan for devices.</h3>");
+  $("#message").show();
+
+  var bon=new Bonjour();
+  bon.nativeFunction(
+    successCallback,
+       function(result){
+         $("#message").html("<p>Error with bonjour scanning "+result+"</p>");
+       }
+  );
+
+}
+
+
+//if successful bonjour scan
+
+function successCallback(result){
+  try{
+    var arr = result.split("|");
+      if(result=="timeout"){
+        if(services_list.length==0){
+          $("#devices_menu").html(get_form_html());
+        }
+      }else{
+        if(arr && arr[2] ){
+           if(services[arr[2]]){
+              console.log("already have a servuce with name "+arr[2]);
+           }else{
+              if (player_url_ok(arr[0],arr[1])){
+//the problem here is that we get them one at a time
+//for now, we get the first one we find
+                 services[arr[2]]= arr[0]+":"+arr[1];
+                 jsonrpc_url = "http://"+arr[0]+":"+arr[1]+"/";
+                 services_list.push(jsonrpc_url);
+                 select_device(jsonrpc_url);
+              }
+           }
+         }
+      }
+   }catch(ex){
+     console.log("exception "+ex);
+   }
+}
+
+//phonegap function
+                
+function onDeviceReady(){
+  scan();
+}
+
+
+//error or no bonjour : ask for manual ip input
+
+function ask_for_ip(){
+  chosen_jsonrpc_url= localStorage.getItem("chosen_jsonrpc_url");
+  var u="";
+  var p="";
+  if(chosen_jsonrpc_url){
+    u = chosen_jsonrpc_url.replace("http://","");
+    p = u.replace(/.*:/,"");
+    p = p.replace(/\/jsonrpc/,"");
+    p = p.replace(/\//g,"");
+    u = u.replace(/:.*/,"");
+  }
+  var html=[];
+  html.push("<p>No devices found</p>");
+  if(!browser_only){
+    html.push("<form onsubmit=\"javascript:rescan();return false;\"><input type='submit' name='re-scan' value='re-scan' class='bluesubmit_left'></form><br />Or enter details manually:");
+  }
+
+  html.push("<form onsubmit=\"javascript:addurl();return false;\" id='url_form'>");
+  html.push("IP or Domain: <br /><input class='forminput' type='text' name='url' value='"+u+"'/><br />");
+  html.push("Port: <br /><input class='forminput' type='text' name='port' value='"+p+"'/><br />");
+  html.push("<input type='submit' class='bluesubmit_left' name='go' value='Add device'></form></div>");
+  $("#message").html(html.join("\n"));
+}
+
+//add the chosen url to the list
+
+function addurl(){
+  var url = document.forms["url_form"].url.value;
+  var port = document.forms["url_form"].port.value;
+  var jsonrpc_url = "http://"+url+":"+port+"/";
+  services[jsonrpc_url]= jsonrpc_url;
+  select_device(jsonrpc_url);
+}
+
+
+function select_device(jsonrpc_url){
+  chosen_jsonrpc_url = jsonrpc_url;
+  localStorage.setItem("chosen_jsonrpc_url", jsonrpc_url);
+  $("#message").html("<p>Selected "+chosen_jsonrpc_url+"</p>");
+  $("#programmes").html("<p>One moment while we get the channels list...</p>");
+  retrieve_channels();
+  delay = 60000;
+  interval = setInterval(retrieve_channels, delay);
+}
+
+
+//display list
+
+var channel_names = {};
+
+function retrieve_channels(){
+  console.log("getting channels "+chosen_jsonrpc_url+"uc/source-lists/uc_default");
+  $.ajax({
+        type: "GET",
+//      url: "channels.xml",//example of the UC output
+        url: chosen_jsonrpc_url+"uc/source-lists/uc_default",
+        dataType: "xml",
+        success: get_channels_names
+  });
+}
+
+
+var on_demand = {};
+
+function get_channels_names(xml){
+  var t = new Date();
+  var m = t.getMinutes(); if(m<9)m="0"+m;
+  var h = t.getHours(); if(h<9)h="0"+h;
+  var s = t.getSeconds(); if(s<9)s="0"+s;
+  $("#message").html("<p>List last updated "+h+":"+m+":"+s+"</p>");
+  var channels = [];//used only for getting pids
+  $(xml).find('source').each(function(){
+    var islive = $(this).attr('live');
+    var name = $(this).attr('name');
+    name = name.replace("&","and");
+    var sid = $(this).attr('sid');
+    var sref = $(this).attr('sref');
+    channel_names[sid]=name;
+    channels.push(name);
+    if(islive=="false"){
+      on_demand[sid] = sref;
+    }
+  });
+  console.log(on_demand);
+    
+  $.ajax({
+    type: "GET",
+    //url: "channels_data.xml",//example of the UC output
+    url: chosen_jsonrpc_url+"uc/search/source-lists/uc_default",
+    dataType: "xml",
+    success: function(data){
+      get_channels_data(data)
+    },
+    error: function(jqXHR, textStatus, errorThrown){
+      console.log("nok "+textStatus);
+      $("#message").html("<p>Failed to get "+url+" error "+textStatus+"</p>");
+    }
+  });
+}
+
+
+function get_channels_data(xml){
+  var html=[];
+  //this is a bit involved but useful to get the pids
+  var crids = [];
+  var data = [];
+
+  $(xml).find('content').each(function(){
+    var title = $(this).attr('title');
+    var sid = $(this).attr('sid');
+    var crid = $(this).attr('global-content-id');
+    var chan_name = channel_names[sid];
+    if(chan_name){
+      chan_name = chan_name.replace("&","and");
+      chan_name = chan_name.replace(/ /g,"_");
+    }else{
+      chan_name = sid;
+    }
+    var desc = $(this).find("synopsis").text();
+    if(on_demand[sid]){    
+      html.push("<p onclick='expand_channel(\""+sid+"\")'>Channel: "+chan_name+" (on demand) <button onclick='expand_channel(\""+sid+"\")'>See programmes</button></p><div class='indent' id=\""+sid+"\"></div>");
+    }else{
+      html.push("<p onclick='play_channel(\""+crid+"\")'>Channel: "+chan_name+" playing "+title+" (live) <button onclick='play_channel(\""+crid+"\")'>Play</button></p>");
+    }
+  });
+  $("#programmes").html(html.join("\n"));
+}
+
+
+function expand_channel(sid){
+  var sref = on_demand[sid];
+  if(sref){
+    $.ajax({
+        type: "GET",
+        url: sref,
+        dataType: "json",
+        success: function(data){
+          add_progs(data,sid);
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+          alert(textStatus);
+        }
+    });
+
+  }
+}
+
+function add_progs(data,sid){
+    var h = [];
+    var s = data["suggestions"];
+    for (var su in s){ 
+       console.log(s[su]["title"]);
+       var url = s[su]["url"];
+       h.push("<p>"+s[su]["title"]+" <button onclick='play_channel(\""+url+"\")'>Play</button></p></p>");
+    }
+    $("#"+sid).html(h.join("\n"));
+
+}
+
+//list item chosen
+//play list item
+
+function play_channel(pid){
+   var url = "http://www.bbc.co.uk/programmes/"+pid;
+   var crid = encodeURIComponent(url);
+   var u = chosen_jsonrpc_url+"uc/search/global-content-id/"+crid;
+   $.ajax({
+        type: "GET",//shoudl be post
+        url: u,
+        dataType: "json",//shoudl be xml
+        success: function(data){
+          channel_changed(data);
+        },
+        error: function(jqXHR, textStatus, errorThrown){
+          alert(textStatus);
+        }
+   });
+
+}
+
+function channel_changed(data){
+  console.log("data");
+  console.log(data);
+  var title = data["title"];
+  var service = data["service"];
+  if(service){
+    $("#message").html("<p>Channel changed to "+service+" playing  "+title+"</p>");
+  }else{
+    $("#message").html("<p>Changed to playing "+title+"</p>");
+  }
+}
+
+
+function init(){
+//if browser only
+//ask for ip address
+  if(browser_only){
+    ask_for_ip();
+  }else{
+    scan();
+  }
+}
+
+</script>
+</head>
+<body onload="test_for_device()">
+
+  <div id="player_link"><a href="tinyplayer.html" target="_blank">Open player in a new window</a></div> 
+  <div id="message"></div>
+  <div id="programmes"></div>
+
+</body>
+</html>
+

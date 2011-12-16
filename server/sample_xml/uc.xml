@@ -1,0 +1,21 @@
+<response resource="uc">
+  <ucserver name="Basic UC Server"
+        server-id="f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+        security-scheme="false"
+        version="0.6.X">
+    <resource rref="uc/time"/>
+    <resource rref="uc/events"/>
+    <resource rref="uc/outputs"/>
+    <resource rref="uc/remote"/>
+    <resource rref="uc/feedback"/>
+    <resource rref="uc/sources"/>
+    <resource rref="uc/source-lists"/>
+    <resource rref="uc/search"/>
+    <resource rref="uc/categories"/>
+    <resource rref="uc/acquisitions"/>
+    <resource rref="uc/apps"/>
+    <resource rref="uc/storage"/>
+    <resource rref="uc/credentials"/>
+  </ucserver>
+</response>
+
