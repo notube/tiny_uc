@@ -506,7 +506,7 @@ presentable-from=\"#{start}\" presentable-until=\"#{en}\">
   @@dataz = {}
 
   @@client= nil
-  @@zid="telly6"
+  @@zid="telly" #needs to be a registered user
 
   # various module methods
 
